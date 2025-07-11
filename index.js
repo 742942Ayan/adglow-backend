@@ -23,8 +23,10 @@ app.use("/api/team", require("./routes/teamRoutes"));
 app.use("/api/leaderboard", require("./routes/leaderboardRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 
+// Test route
 app.get("/", (req, res) => {
   res.send("🎉 AdGlow Backend is Running");
 });
 
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+// ✅ IMPORTANT: Bind to 0.0.0.0 for Render
+app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Server running on port ${PORT}`));
