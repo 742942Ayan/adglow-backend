@@ -1,11 +1,11 @@
-// Auth routes: Register, Login, OTP
+// routes/authRoutes.js
+
 const express = require("express");
 const router = express.Router();
+const { registerUser } = require("../controllers/authController");
 
-// @route POST /api/auth/register
-// @desc Register user with OTP
-router.post("/register", (req, res) => {
-  res.send("User registered");
-});
+// @route   POST /api/auth/register
+// @desc    Register user and send OTP
+router.post("/register", registerUser);
 
 module.exports = router;
