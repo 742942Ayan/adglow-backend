@@ -97,9 +97,15 @@ exports.register = async (req, res) => {
 exports.verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
-    const lowerEmail = email.toLowerCase();
 
-    const validOtp = await Otp.findOne({ email: lowerEmail, otp });
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required" });
+    }
+
+    const lowerEmail = email.trim().toLowerCase();
+    const trimmedOtp = otp.trim();
+
+    const validOtp = await Otp.findOne({ email: lowerEmail, otp: trimmedOtp });
     if (!validOtp) {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
