@@ -21,6 +21,13 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
   },
 
+  password: {
+    type: String,
+    required: true,
+    minlength: 6,
+    select: false, // 📌 prevents returning password by default
+  },
+
   emailVerified: {
     type: Boolean,
     default: false,
@@ -45,6 +52,8 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+}, {
+  timestamps: true, // 📌 Adds createdAt & updatedAt automatically
 });
 
 module.exports = mongoose.model("User", userSchema);
