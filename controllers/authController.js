@@ -1,5 +1,3 @@
-// controllers/authController.js
-
 const User = require("../models/User");
 const Otp = require("../models/Otp");
 const bcrypt = require("bcryptjs");
@@ -24,19 +22,42 @@ exports.register = async (req, res) => {
       referredBy,
     } = req.body;
 
-    // Check if user already exists
+    // Check if user exists
     const existingUser = await User.findOne({ email });
-    if (existingUser) {
+
+    // If already registered AND verified => Stop
+    if (existingUser && existingUser.emailVerified) {
       return res.status(400).json({ message: "Email already registered" });
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // If exists but NOT verified => update data + resend OTP
+    if (existingUser && !existingUser.emailVerified) {
+      // Update user info & resend OTP
+      existingUser.fullName = fullName;
+      existingUser.fatherName = fatherName;
+      existingUser.dob = dob;
+      existingUser.gender = gender;
+      existingUser.address = address;
+      existingUser.country = country;
+      existingUser.state = state;
+      existingUser.district = district;
+      existingUser.pincode = pincode;
+      existingUser.mobile = mobile;
+      existingUser.password = await bcrypt.hash(password, 10);
+      await existingUser.save();
 
-    // Generate referral code (8 character unique)
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      await Otp.deleteMany({ email }); // remove previous
+      await Otp.create({ email, otp: otpCode });
+      await sendOtpEmail(email, otpCode);
+
+      return res.status(200).json({ message: "OTP re-sent to your email." });
+    }
+
+    // If not exists => create new
+    const hashedPassword = await bcrypt.hash(password, 10);
     const referralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
 
-    // Save new user (unverified)
     const newUser = new User({
       fullName,
       fatherName,
@@ -57,13 +78,8 @@ exports.register = async (req, res) => {
 
     await newUser.save();
 
-    // Generate OTP
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Save OTP to DB
     await Otp.create({ email, otp: otpCode });
-
-    // Send OTP to email
     await sendOtpEmail(email, otpCode);
 
     return res.status(200).json({ message: "OTP sent to email. Please verify." });
@@ -83,10 +99,7 @@ exports.verifyOtp = async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
-    // Mark user email as verified
     await User.updateOne({ email }, { $set: { emailVerified: true } });
-
-    // Delete all OTPs for that email
     await Otp.deleteMany({ email });
 
     return res.status(200).json({ message: "Email verified successfully!" });
