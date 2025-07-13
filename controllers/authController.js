@@ -27,13 +27,14 @@ exports.register = async (req, res) => {
     // Check if user exists
     const existingUser = await User.findOne({ email: lowerEmail });
 
-    // If already registered AND verified => Stop
+    // ✅ If already registered AND verified => Stop
     if (existingUser && existingUser.emailVerified) {
       return res.status(400).json({ message: "Email already registered" });
     }
 
-    // If exists but NOT verified => update info & resend OTP
+    // ✅ If exists but NOT verified => update + resend OTP
     if (existingUser && !existingUser.emailVerified) {
+      // Update user info & password
       existingUser.fullName = fullName;
       existingUser.fatherName = fatherName;
       existingUser.dob = dob;
@@ -47,15 +48,16 @@ exports.register = async (req, res) => {
       existingUser.password = await bcrypt.hash(password, 10);
       await existingUser.save();
 
+      // Generate & send OTP
       const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-      await Otp.deleteMany({ email: lowerEmail }); // clear old OTPs
+      await Otp.deleteMany({ email: lowerEmail }); // remove old OTPs
       await Otp.create({ email: lowerEmail, otp: otpCode });
       await sendOtpEmail(lowerEmail, otpCode);
 
       return res.status(200).json({ message: "OTP re-sent to your email." });
     }
 
-    // Else: Create new user
+    // ✅ New User
     const hashedPassword = await bcrypt.hash(password, 10);
     const referralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
 
@@ -79,6 +81,7 @@ exports.register = async (req, res) => {
 
     await newUser.save();
 
+    // Generate & send OTP
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     await Otp.create({ email: lowerEmail, otp: otpCode });
     await sendOtpEmail(lowerEmail, otpCode);
@@ -93,18 +96,16 @@ exports.register = async (req, res) => {
 // 📌 Verify OTP
 exports.verifyOtp = async (req, res) => {
   try {
-    const email = req.body.email.toLowerCase().trim();
-    const otp = req.body.otp.trim();
+    const { email, otp } = req.body;
+    const lowerEmail = email.toLowerCase();
 
-    console.log("Verifying OTP for:", email, otp);
-
-    const validOtp = await Otp.findOne({ email, otp });
+    const validOtp = await Otp.findOne({ email: lowerEmail, otp });
     if (!validOtp) {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
-    await User.updateOne({ email }, { $set: { emailVerified: true } });
-    await Otp.deleteMany({ email });
+    await User.updateOne({ email: lowerEmail }, { $set: { emailVerified: true } });
+    await Otp.deleteMany({ email: lowerEmail });
 
     return res.status(200).json({ message: "Email verified successfully!" });
   } catch (err) {
