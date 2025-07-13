@@ -4,6 +4,7 @@ const otpSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
+    lowercase: true,  // ✅ this is the missing part
   },
   otp: {
     type: String,
