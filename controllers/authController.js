@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const Otp = require("../models/Otp");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const { sendOtpEmail } = require("../utils/emailService");
 
 // 📌 Register User & Send OTP
@@ -19,19 +20,16 @@ exports.register = async (req, res) => {
       mobile,
       email,
       password,
-      referredBy
+      referredBy,
     } = req.body;
 
     const lowerEmail = email.trim().toLowerCase();
-
     const existingUser = await User.findOne({ email: lowerEmail });
 
-    // ✅ Already registered & verified
     if (existingUser && existingUser.emailVerified) {
       return res.status(400).json({ message: "Email already registered" });
     }
 
-    // ✅ Exists but not verified — resend OTP
     if (existingUser && !existingUser.emailVerified) {
       existingUser.fullName = fullName;
       existingUser.fatherName = fatherName;
@@ -54,7 +52,6 @@ exports.register = async (req, res) => {
       return res.status(200).json({ message: "OTP re-sent to your email." });
     }
 
-    // ✅ New User
     const hashedPassword = await bcrypt.hash(password, 10);
     const referralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
 
@@ -73,7 +70,7 @@ exports.register = async (req, res) => {
       password: hashedPassword,
       referralCode,
       referredBy: referredBy || null,
-      emailVerified: false
+      emailVerified: false,
     });
 
     await newUser.save();
@@ -94,10 +91,9 @@ exports.verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
     const lowerEmail = email.trim().toLowerCase();
-    const trimmedOtp = otp.toString().trim(); // ✅ force as string + trim
+    const trimmedOtp = otp.toString().trim();
 
     const validOtp = await Otp.findOne({ email: lowerEmail, otp: trimmedOtp });
-
     if (!validOtp) {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
@@ -108,6 +104,47 @@ exports.verifyOtp = async (req, res) => {
     return res.status(200).json({ message: "Email verified successfully!" });
   } catch (err) {
     console.error("❌ OTP Verification Error:", err);
+    return res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+// 📌 Login with Email & Password
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const lowerEmail = email.trim().toLowerCase();
+
+    const user = await User.findOne({ email: lowerEmail });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!user.emailVerified) {
+      return res.status(400).json({ message: "Email not verified" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid password" });
+    }
+
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+
+    return res.status(200).json({
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        referralCode: user.referralCode,
+        referredBy: user.referredBy,
+      },
+    });
+  } catch (err) {
+    console.error("❌ Login Error:", err);
     return res.status(500).json({ message: "Server error", error: err.message });
   }
 };
