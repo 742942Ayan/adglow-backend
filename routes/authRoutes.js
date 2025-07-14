@@ -1,13 +1,14 @@
-// routes/authRoutes.js
-
 const express = require("express");
 const router = express.Router();
-const { register, verifyOtp } = require("../controllers/authController");
+const { register, verifyOtp, login } = require("../controllers/authController");
 
-// ✅ Register route
+// Register route
 router.post("/register", register);
 
-// ✅ Correct OTP verification route
+// Verify OTP route
 router.post("/verify-otp", verifyOtp);
+
+// ✅ Login route
+router.post("/login", login);
 
 module.exports = router;
