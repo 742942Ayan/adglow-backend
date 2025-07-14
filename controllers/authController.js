@@ -3,7 +3,7 @@ const Otp = require("../models/Otp");
 const bcrypt = require("bcryptjs");
 const { sendOtpEmail } = require("../utils/emailService");
 
-// 📌 Register user and send OTP
+// 📌 Register User & Send OTP
 exports.register = async (req, res) => {
   try {
     const {
@@ -19,20 +19,19 @@ exports.register = async (req, res) => {
       mobile,
       email,
       password,
-      referredBy,
+      referredBy
     } = req.body;
 
     const lowerEmail = email.trim().toLowerCase();
 
-    // 🔍 Check if user exists
     const existingUser = await User.findOne({ email: lowerEmail });
 
-    // ✅ Already registered and verified
+    // ✅ Already registered & verified
     if (existingUser && existingUser.emailVerified) {
       return res.status(400).json({ message: "Email already registered" });
     }
 
-    // 🔁 If exists but not verified → update & resend OTP
+    // ✅ Exists but not verified — resend OTP
     if (existingUser && !existingUser.emailVerified) {
       existingUser.fullName = fullName;
       existingUser.fatherName = fatherName;
@@ -55,7 +54,7 @@ exports.register = async (req, res) => {
       return res.status(200).json({ message: "OTP re-sent to your email." });
     }
 
-    // 🆕 New registration
+    // ✅ New User
     const hashedPassword = await bcrypt.hash(password, 10);
     const referralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
 
@@ -74,7 +73,7 @@ exports.register = async (req, res) => {
       password: hashedPassword,
       referralCode,
       referredBy: referredBy || null,
-      emailVerified: false,
+      emailVerified: false
     });
 
     await newUser.save();
@@ -94,11 +93,6 @@ exports.register = async (req, res) => {
 exports.verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
-
-    if (!email || !otp) {
-      return res.status(400).json({ message: "Email और OTP अनिवार्य हैं" });
-    }
-
     const lowerEmail = email.trim().toLowerCase();
     const trimmedOtp = otp.trim();
 
@@ -111,7 +105,7 @@ exports.verifyOtp = async (req, res) => {
     await User.updateOne({ email: lowerEmail }, { $set: { emailVerified: true } });
     await Otp.deleteMany({ email: lowerEmail });
 
-    return res.status(200).json({ message: "✅ Email सफलतापूर्वक सत्यापित हुआ!" });
+    return res.status(200).json({ message: "Email verified successfully!" });
   } catch (err) {
     console.error("❌ OTP Verification Error:", err);
     return res.status(500).json({ message: "Server error", error: err.message });
