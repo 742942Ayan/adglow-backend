@@ -128,6 +128,13 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: "Invalid password" });
     }
 
+    // ✅ Debugging JWT_SECRET value
+    console.log("🔐 JWT_SECRET from env:", process.env.JWT_SECRET);
+
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({ message: "JWT_SECRET is not defined in environment." });
+    }
+
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
