@@ -93,8 +93,8 @@ exports.register = async (req, res) => {
 exports.verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
-    const lowerEmail = email.trim().toLowerCase();
-    const trimmedOtp = otp.trim();
+    const lowerEmail = email.toLowerCase();
+    const trimmedOtp = otp.toString().trim(); // ✅ force as string
 
     const validOtp = await Otp.findOne({ email: lowerEmail, otp: trimmedOtp });
 
