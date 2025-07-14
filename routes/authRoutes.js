@@ -4,10 +4,10 @@ const express = require("express");
 const router = express.Router();
 const { register, verifyOtp } = require("../controllers/authController");
 
-// ✅ Route to register user and send OTP
+// ✅ Register route
 router.post("/register", register);
 
-// ✅ Route to verify OTP (corrected path)
+// ✅ Correct OTP verification route
 router.post("/verify-otp", verifyOtp);
 
 module.exports = router;
