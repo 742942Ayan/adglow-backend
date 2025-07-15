@@ -1,83 +1,84 @@
 const Kyc = require("../models/Kyc");
 const User = require("../models/User");
+const path = require("path");
 
-// ✅ Submit or Resubmit KYC
-exports.submitKyc = async (req, res) => {
+exports.uploadKyc = async (req, res) => {
   try {
     const userId = req.user._id;
-    const {
-      fullName,
-      fatherName,
-      dob,
-      documentType,
-      documentNumber,
-      frontImage,
-      backImage
-    } = req.body;
 
-    if (!fullName || !fatherName || !dob || !documentType || !documentNumber || !frontImage || !backImage) {
-      return res.status(400).json({ message: "All fields are required" });
+    // Check if files are uploaded
+    if (!req.files || !req.files.frontImage || !req.files.backImage) {
+      return res.status(400).json({ message: "Both front and back images are required." });
     }
 
-    let existingKyc = await Kyc.findOne({ user: userId });
+    const { fullName, fatherName, dob, documentType, documentNumber } = req.body;
 
-    if (existingKyc) {
-      if (existingKyc.status === "approved") {
-        return res.status(400).json({ message: "KYC already approved" });
-      }
+    // Validate mandatory fields
+    if (!fullName || !fatherName || !dob || !documentType || !documentNumber) {
+      return res.status(400).json({ message: "All KYC fields are required." });
+    }
 
-      if (existingKyc.uploadCount >= 5) {
-        return res.status(400).json({ message: "Maximum 5 attempts allowed. You cannot upload more." });
-      }
+    // Check if KYC already exists for user
+    let existing = await Kyc.findOne({ user: userId });
 
-      // Update existing KYC
-      existingKyc.fullName = fullName;
-      existingKyc.fatherName = fatherName;
-      existingKyc.dob = dob;
-      existingKyc.documentType = documentType;
-      existingKyc.documentNumber = documentNumber;
-      existingKyc.frontImage = frontImage;
-      existingKyc.backImage = backImage;
-      existingKyc.status = "pending";
-      existingKyc.rejectionReason = "";
-      existingKyc.uploadCount += 1;
+    // Prevent if already 5 failed attempts
+    if (existing && existing.uploadCount >= 5 && existing.status === "rejected") {
+      return res.status(403).json({ message: "KYC upload limit exceeded. You cannot upload again." });
+    }
 
-      await existingKyc.save();
-      await User.findByIdAndUpdate(userId, { kycStatus: "pending" });
+    const frontImagePath = `/uploads/${req.files.frontImage[0].filename}`;
+    const backImagePath = `/uploads/${req.files.backImage[0].filename}`;
 
-      return res.status(200).json({ message: "KYC re-submitted successfully" });
+    if (existing) {
+      // Re-upload (on rejection)
+      existing.fullName = fullName;
+      existing.fatherName = fatherName;
+      existing.dob = dob;
+      existing.documentType = documentType;
+      existing.documentNumber = documentNumber;
+      existing.frontImage = frontImagePath;
+      existing.backImage = backImagePath;
+      existing.status = "pending";
+      existing.rejectionReason = "";
+      existing.uploadCount += 1;
+      await existing.save();
     } else {
       // New KYC
-      const newKyc = new Kyc({
+      await Kyc.create({
         user: userId,
         fullName,
         fatherName,
         dob,
         documentType,
         documentNumber,
-        frontImage,
-        backImage,
+        frontImage: frontImagePath,
+        backImage: backImagePath,
       });
-
-      await newKyc.save();
-      await User.findByIdAndUpdate(userId, { kycStatus: "pending" });
-
-      return res.status(201).json({ message: "KYC submitted successfully" });
     }
+
+    // Update user's KYC status
+    await User.findByIdAndUpdate(userId, { kycStatus: "pending" });
+
+    return res.status(200).json({ message: "KYC submitted successfully." });
   } catch (err) {
-    console.error("❌ KYC Submission Error:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
+    console.error("❌ KYC Upload Error:", err);
+    return res.status(500).json({ message: "KYC submission failed", error: err.message });
   }
 };
 
-// ✅ Get current KYC details
+// ✅ Get current user's KYC status and data
 exports.getMyKyc = async (req, res) => {
   try {
-    const kyc = await Kyc.findOne({ user: req.user._id });
-    if (!kyc) return res.status(404).json({ message: "No KYC found" });
-    res.json(kyc);
+    const userId = req.user._id;
+    const kyc = await Kyc.findOne({ user: userId });
+
+    if (!kyc) {
+      return res.status(404).json({ message: "No KYC submitted yet." });
+    }
+
+    return res.status(200).json(kyc);
   } catch (err) {
     console.error("❌ Get KYC Error:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
+    return res.status(500).json({ message: "Server error", error: err.message });
   }
 };
