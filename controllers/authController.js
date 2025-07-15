@@ -153,3 +153,50 @@ exports.login = async (req, res) => {
     return res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
+// 📌 Forgot Password → Send OTP
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const lowerEmail = email.trim().toLowerCase();
+
+    const user = await User.findOne({ email: lowerEmail });
+    if (!user || !user.emailVerified) {
+      return res.status(404).json({ message: "User not found or email not verified" });
+    }
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    await Otp.deleteMany({ email: lowerEmail });
+    await Otp.create({ email: lowerEmail, otp: otpCode });
+
+    await sendOtpEmail(lowerEmail, otpCode);
+    return res.status(200).json({ message: "OTP sent to your email for password reset" });
+  } catch (err) {
+    console.error("❌ Forgot Password Error:", err);
+    return res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+// 📌 Reset Password → With OTP
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    const lowerEmail = email.trim().toLowerCase();
+    const trimmedOtp = otp.toString().trim();
+
+    const validOtp = await Otp.findOne({ email: lowerEmail, otp: trimmedOtp });
+    if (!validOtp) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await User.updateOne({ email: lowerEmail }, { $set: { password: hashedPassword } });
+    await Otp.deleteMany({ email: lowerEmail });
+
+    return res.status(200).json({ message: "Password reset successful!" });
+  } catch (err) {
+    console.error("❌ Reset Password Error:", err);
+    return res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
