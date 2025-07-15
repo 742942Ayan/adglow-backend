@@ -181,3 +181,26 @@ exports.forgotPassword = async (req, res) => {
     return res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
+// 📌 Update Password after OTP verification
+exports.updatePassword = async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    const lowerEmail = email.trim().toLowerCase();
+
+    const user = await User.findOne({ email: lowerEmail });
+    if (!user || !user.emailVerified) {
+      return res.status(404).json({ message: "User not found or email not verified" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    return res.status(200).json({ message: "Password updated successfully!" });
+  } catch (err) {
+    console.error("❌ Update Password Error:", err);
+    return res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
