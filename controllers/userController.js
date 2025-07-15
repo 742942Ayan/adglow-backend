@@ -1,3 +1,7 @@
+const User = require("../models/User");
+const Kyc = require("../models/Kyc");
+
+// ✅ GET user profile
 exports.getUserProfile = async (req, res) => {
   try {
     const user = req.user;
@@ -23,6 +27,57 @@ exports.getUserProfile = async (req, res) => {
     });
   } catch (err) {
     console.error("❌ Get Profile Error:", err);
+    return res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+// ✅ POST /kyc - KYC document upload handler
+exports.uploadKyc = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const {
+      fullName,
+      fatherName,
+      dob,
+      documentType,
+      documentNumber,
+    } = req.body;
+
+    if (!fullName || !fatherName || !dob || !documentType || !documentNumber) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    if (!req.files?.frontImage || !req.files?.backImage) {
+      return res.status(400).json({ message: "Front and back images are required" });
+    }
+
+    const frontImage = req.files.frontImage[0].path;
+    const backImage = req.files.backImage[0].path;
+
+    // ✅ Save to KYC collection
+    const newKyc = new Kyc({
+      user: userId,
+      fullName,
+      fatherName,
+      dob,
+      documentType,
+      documentNumber,
+      frontImage,
+      backImage,
+      status: "pending",
+    });
+
+    await newKyc.save();
+
+    // ✅ Update user status
+    await User.findByIdAndUpdate(userId, {
+      kycStatus: "pending",
+    });
+
+    return res.status(200).json({ message: "KYC submitted successfully" });
+  } catch (err) {
+    console.error("❌ KYC Upload Error:", err);
     return res.status(500).json({ message: "Server error", error: err.message });
   }
 };
