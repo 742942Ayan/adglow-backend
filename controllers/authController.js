@@ -114,7 +114,8 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
     const lowerEmail = email.trim().toLowerCase();
 
-    const user = await User.findOne({ email: lowerEmail });
+    // ✅ FIXED: Select password explicitly
+    const user = await User.findOne({ email: lowerEmail }).select("+password");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -123,7 +124,6 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Email not verified" });
     }
 
-    // ✅ DEBUG THIS:
     console.log("🔐 JWT_SECRET FROM ENV:", process.env.JWT_SECRET);
     console.log("🔐 User Password (Hashed):", user.password);
     console.log("🔐 Password Entered:", password);
@@ -133,7 +133,6 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: "Invalid password" });
     }
 
-    // 🧨 THIS LINE WILL FAIL IF JWT_SECRET IS UNDEFINED
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
