@@ -160,12 +160,17 @@ exports.forgotPassword = async (req, res) => {
     const { email } = req.body;
     const lowerEmail = email.trim().toLowerCase();
 
+    console.log("🔐 Forgot Password - Email:", lowerEmail); // ✅ DEBUG LOG
+
     const user = await User.findOne({ email: lowerEmail });
     if (!user || !user.emailVerified) {
       return res.status(404).json({ message: "User not found or email not verified" });
     }
 
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    console.log("🔐 OTP Generated:", otpCode); // ✅ DEBUG LOG
+
     await Otp.deleteMany({ email: lowerEmail });
     await Otp.create({ email: lowerEmail, otp: otpCode });
 
@@ -176,6 +181,7 @@ exports.forgotPassword = async (req, res) => {
     return res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
 
 // 📌 Reset Password → With OTP
 exports.resetPassword = async (req, res) => {
