@@ -15,4 +15,8 @@ router.post("/login", login);
 // 📌 Forgot Password
 router.post("/forgot-password", forgotPassword);
 
+// ✅ update-password
+router.post("/update-password", authController.updatePassword);
+
+
 module.exports = router;
