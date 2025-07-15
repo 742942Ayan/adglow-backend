@@ -181,28 +181,3 @@ exports.forgotPassword = async (req, res) => {
     return res.status(500).json({ message: "Server error", error: err.message });
   }
 };
-
-
-// 📌 Reset Password → With OTP
-exports.resetPassword = async (req, res) => {
-  try {
-    const { email, otp, newPassword } = req.body;
-    const lowerEmail = email.trim().toLowerCase();
-    const trimmedOtp = otp.toString().trim();
-
-    const validOtp = await Otp.findOne({ email: lowerEmail, otp: trimmedOtp });
-    if (!validOtp) {
-      return res.status(400).json({ message: "Invalid or expired OTP" });
-    }
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await User.updateOne({ email: lowerEmail }, { $set: { password: hashedPassword } });
-    await Otp.deleteMany({ email: lowerEmail });
-
-    return res.status(200).json({ message: "Password reset successful!" });
-  } catch (err) {
-    console.error("❌ Reset Password Error:", err);
-    return res.status(500).json({ message: "Server error", error: err.message });
-  }
-};
-
