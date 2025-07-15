@@ -6,6 +6,7 @@ dotenv.config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const fs = require("fs");
 const connectDB = require("./config/db");
 
 // ✅ 3. App setup
@@ -16,13 +17,19 @@ const PORT = process.env.PORT || 10000;
 app.use(cors());
 app.use(express.json());
 
-// ✅ 5. Serve uploaded KYC images statically
+// ✅ 5. Ensure uploads/kyc folder exists
+const kycDir = path.join(__dirname, "uploads", "kyc");
+if (!fs.existsSync(kycDir)) {
+  fs.mkdirSync(kycDir, { recursive: true });
+}
+
+// ✅ 6. Serve uploaded KYC images statically
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// ✅ 6. Connect to MongoDB
+// ✅ 7. Connect to MongoDB
 connectDB();
 
-// ✅ 7. All Routes
+// ✅ 8. All Routes
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/user", require("./routes/userRoutes"));
 app.use("/api/task", require("./routes/taskRoutes"));
@@ -31,12 +38,12 @@ app.use("/api/team", require("./routes/teamRoutes"));
 app.use("/api/leaderboard", require("./routes/leaderboardRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 
-// ✅ 8. Test route
+// ✅ 9. Test route
 app.get("/", (req, res) => {
   res.send("🎉 AdGlow Backend is Running");
 });
 
-// ✅ 9. Start Server
+// ✅ 10. Start Server
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
