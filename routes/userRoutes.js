@@ -4,13 +4,16 @@ const authMiddleware = require("../middleware/authMiddleware");
 const upload = require("../middleware/upload");
 const {
   getUserProfile,
-  uploadKyc,
 } = require("../controllers/userController");
+const {
+  uploadKyc,
+  getMyKyc,
+} = require("../controllers/kycController");
 
-// ✅ GET user profile (secured)
+// ✅ Get user profile
 router.get("/profile", authMiddleware, getUserProfile);
 
-// ✅ POST KYC submission with file upload and auth
+// ✅ Submit or re-submit KYC with file upload
 router.post(
   "/kyc",
   authMiddleware,
@@ -20,5 +23,8 @@ router.post(
   ]),
   uploadKyc
 );
+
+// ✅ Get current user's KYC details
+router.get("/kyc", authMiddleware, getMyKyc);
 
 module.exports = router;
