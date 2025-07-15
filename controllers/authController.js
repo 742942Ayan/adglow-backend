@@ -123,18 +123,17 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Email not verified" });
     }
 
+    // ✅ DEBUG THIS:
+    console.log("🔐 JWT_SECRET FROM ENV:", process.env.JWT_SECRET);
+    console.log("🔐 User Password (Hashed):", user.password);
+    console.log("🔐 Password Entered:", password);
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid password" });
     }
 
-    // ✅ Debugging JWT_SECRET value
-    console.log("🔐 JWT_SECRET from env:", process.env.JWT_SECRET);
-
-    if (!process.env.JWT_SECRET) {
-      return res.status(500).json({ message: "JWT_SECRET is not defined in environment." });
-    }
-
+    // 🧨 THIS LINE WILL FAIL IF JWT_SECRET IS UNDEFINED
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
