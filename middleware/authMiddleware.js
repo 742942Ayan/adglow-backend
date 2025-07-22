@@ -19,7 +19,7 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ message: "Access Denied: User not found" });
     }
 
-    req.user = user;
+    req.user = user; // attaching user data to request
     next();
   } catch (err) {
     console.error("❌ Auth Middleware Error:", err.message);
