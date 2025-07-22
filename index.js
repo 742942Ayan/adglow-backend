@@ -37,7 +37,7 @@ app.use("/api/wallet", require("./routes/walletRoutes"));
 app.use("/api/team", require("./routes/teamRoutes"));
 app.use("/api/leaderboard", require("./routes/leaderboardRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
-app.use("/api/leaderboard", require("./routes/leaderboardRoutes"));
+app.use("/api/withdrawal", require("./routes/withdrawalRoutes"));
 
 // ✅ 9. Test route
 app.get("/", (req, res) => {
