@@ -1,21 +1,23 @@
+// routes/leaderboard.js
 const express = require("express");
 const router = express.Router();
-const User = require("../models/User");
+const User = require("../models/UserModel"); // User model import
+const authMiddleware = require("../middleware/authMiddleware"); // Token verify
 
-// @route   GET /api/leaderboard
-// @desc    Get top 10 earners based on wallet balance
-// @access  Public
-router.get("/", async (req, res) => {
+// @route GET /api/leaderboard
+// @desc Get top 10 users by earnings
+// @access Private
+router.get("/", authMiddleware, async (req, res) => {
   try {
-    const topUsers = await User.find({})  // You can add filters like { isActive: true } if needed
-      .sort({ walletBalance: -1 })        // Sort by highest wallet balance
-      .limit(10)                          // Only top 10
-      .select("fullName email walletBalance referralEarnings"); // Only necessary fields
+    const topUsers = await User.find()
+      .sort({ totalEarnings: -1 }) // Highest earning first
+      .limit(10) // Top 10
+      .select("fullName email country state wallet totalEarnings"); // Only needed fields
 
-    res.status(200).json(topUsers);
-  } catch (error) {
-    console.error("Leaderboard fetch error:", error);
-    res.status(500).json({ message: "Failed to fetch leaderboard" });
+    res.json(topUsers);
+  } catch (err) {
+    console.error("Leaderboard fetch error:", err.message);
+    res.status(500).json({ message: "Server error while loading leaderboard" });
   }
 });
 
