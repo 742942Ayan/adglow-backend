@@ -1,7 +1,7 @@
 // routes/leaderboard.js
 const express = require("express");
 const router = express.Router();
-const User = require("../models/UserModel"); // User model import
+const User = require("../models/User"); // ✅ Corrected
 const authMiddleware = require("../middleware/authMiddleware"); // Token verify
 
 // @route GET /api/leaderboard
