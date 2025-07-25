@@ -38,6 +38,7 @@ app.use("/api/team", require("./routes/teamRoutes"));
 app.use("/api/leaderboard", require("./routes/leaderboardRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/withdrawal", require("./routes/withdrawalRoutes"));
+app.use("/api/referral", require("./routes/referralRoutes")); // ✅ Newly added
 
 // ✅ 9. Test route
 app.get("/", (req, res) => {
