@@ -1,31 +1,45 @@
 // controllers/taskController.js
-const User = require("../models/userModel");
-const Wallet = require("../models/walletModel");
-const { distributeReferralCommission } = require("../utils/referralUtils");
 
-exports.completeTaskAndReward = async (req, res) => {
+const Wallet = require("../models/Wallet");
+const User = require("../models/User");
+const AdminSettings = require("../models/AdminSettings");
+const distributeReferralEarnings = require("../utils/distributeReferralEarnings");
+
+// ✅ Task Completion Controller
+const completeTask = async (req, res) => {
   try {
-    const { userId, taskId, rewardAmount } = req.body;
+    const userId = req.user._id;
+    const { taskId, rewardAmount } = req.body; // rewardAmount = total task reward (e.g. ₹10)
 
-    // 1. Check user exists
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!taskId || !rewardAmount) {
+      return res.status(400).json({ message: "Task ID and reward amount are required." });
+    }
 
-    // 2. Add main reward to user's wallet
+    // ✅ Step 1: Credit 50% to user
+    const userShare = rewardAmount * 0.5;
+
     await Wallet.findOneAndUpdate(
-      { userId },
-      { $inc: { balance: rewardAmount } },
-      { upsert: true, new: true }
+      { user: userId },
+      { $inc: { balance: userShare, totalEarned: userShare } },
+      { upsert: true }
     );
 
-    // 3. Distribute 30-level referral commissions
-    await distributeReferralCommission(userId, rewardAmount);
+    // ✅ Step 2: Distribute 50% among uplines
+    const referralShare = rewardAmount * 0.5;
+
+    await distributeReferralEarnings(userId, referralShare);
 
     return res.status(200).json({
-      message: "Task completed, reward credited and referral commission distributed.",
+      message: "Task completed, earnings distributed.",
+      userEarned: userShare,
+      referralDistributed: referralShare,
     });
   } catch (error) {
-    console.error("Error completing task:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("Task completion error:", error);
+    return res.status(500).json({ message: "Task completion failed" });
   }
+};
+
+module.exports = {
+  completeTask,
 };
