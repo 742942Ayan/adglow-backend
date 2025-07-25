@@ -195,7 +195,110 @@ exports.updatePassword = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedPassword;
-    await user.save();
+    await user.save();// 📌 Register User & Send OTP
+exports.register = async (req, res) => {
+  try {
+    const {
+      fullName,
+      fatherName,
+      dob,
+      gender,
+      address,
+      country,
+      state,
+      district,
+      pincode,
+      mobile,
+      email,
+      password,
+      referredBy, // This will be referralCode of referrer
+    } = req.body;
+
+    const lowerEmail = email.trim().toLowerCase();
+    const existingUser = await User.findOne({ email: lowerEmail });
+
+    // 🔁 If user exists but not verified, resend OTP and update data
+    if (existingUser && !existingUser.emailVerified) {
+      existingUser.fullName = fullName;
+      existingUser.fatherName = fatherName;
+      existingUser.dob = dob;
+      existingUser.gender = gender;
+      existingUser.address = address;
+      existingUser.country = country;
+      existingUser.state = state;
+      existingUser.district = district;
+      existingUser.pincode = pincode;
+      existingUser.mobile = mobile;
+      existingUser.password = await bcrypt.hash(password, 10);
+
+      await existingUser.save();
+
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      await Otp.deleteMany({ email: lowerEmail });
+      await Otp.create({ email: lowerEmail, otp: otpCode });
+      await sendOtpEmail(lowerEmail, otpCode);
+
+      return res.status(200).json({ message: "OTP re-sent to your email." });
+    }
+
+    if (existingUser && existingUser.emailVerified) {
+      return res.status(400).json({ message: "Email already registered" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 🎯 Generate unique referral code
+    let referralCode;
+    let codeExists = true;
+    while (codeExists) {
+      referralCode = "ADG" + Math.floor(100000 + Math.random() * 900000);
+      const checkCode = await User.findOne({ referralCode });
+      if (!checkCode) codeExists = false;
+    }
+
+    const newUser = new User({
+      fullName,
+      fatherName,
+      dob,
+      gender,
+      address,
+      country,
+      state,
+      district,
+      pincode,
+      mobile,
+      email: lowerEmail,
+      password: hashedPassword,
+      referralCode,
+      emailVerified: false,
+    });
+
+    // 🔗 Handle ReferredBy (referralCode → User ID)
+    if (referredBy) {
+      const referrer = await User.findOne({ referralCode: referredBy.trim() });
+      if (referrer) {
+        newUser.referredBy = referrer._id;
+        newUser.referralName = referrer.fullName;
+
+        // Add this user to referrer's downline
+        referrer.referrals.push(newUser._id);
+        await referrer.save();
+      }
+    }
+
+    await newUser.save();
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    await Otp.create({ email: lowerEmail, otp: otpCode });
+    await sendOtpEmail(lowerEmail, otpCode);
+
+    return res.status(200).json({ message: "OTP sent to email. Please verify." });
+  } catch (err) {
+    console.error("❌ Register Error:", err);
+    return res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
 
     return res.status(200).json({ message: "Password updated successfully!" });
   } catch (err) {
