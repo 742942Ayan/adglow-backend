@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     minlength: 6,
-    select: false, // 📌 prevents returning password by default
+    select: false,
   },
 
   emailVerified: {
@@ -35,11 +35,13 @@ const userSchema = new mongoose.Schema({
 
   referralCode: {
     type: String,
+    required: true,
     unique: true,
   },
 
   referredBy: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
     default: null,
   },
 
@@ -48,12 +50,20 @@ const userSchema = new mongoose.Schema({
     default: "",
   },
 
+  referrals: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    }
+  ],
+
   createdAt: {
     type: Date,
     default: Date.now,
   },
+
 }, {
-  timestamps: true, // 📌 Adds createdAt & updatedAt automatically
+  timestamps: true,
 });
 
 module.exports = mongoose.model("User", userSchema);
