@@ -2,6 +2,7 @@
 
 const express = require("express");
 const router = express.Router();
+const { createTask } = require('../controllers/taskController');
 
 const authMiddleware = require("../middleware/authMiddleware");
 const { isAdmin } = require("../middleware/adminMiddleware");
@@ -15,6 +16,7 @@ const {
 
 // ✅ Admin: Upload a new task
 router.post("/upload", authMiddleware, isAdmin, uploadTask);
+router.post('/create-task', createTask);
 
 // ✅ User: Get all tasks
 router.get("/all", authMiddleware, getAllTasks);
