@@ -1,11 +1,10 @@
-// Task routes: View & Complete tasks
-const express = require("express");
-const router = express.Router();
-
-// @route GET /api/task/
-// @desc Get all available tasks
-router.get("/", (req, res) => {
-  res.send("All tasks");
+router.post('/', authMiddleware, isAdmin, async (req, res) => {
+  const task = new Task(req.body);
+  await task.save();
+  res.json(task);
 });
 
-module.exports = router;
+router.delete('/:id', authMiddleware, isAdmin, async (req, res) => {
+  await Task.findByIdAndDelete(req.params.id);
+  res.json({ message: 'Deleted' });
+});
