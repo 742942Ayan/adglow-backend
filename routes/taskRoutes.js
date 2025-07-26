@@ -2,12 +2,12 @@
 
 const express = require("express");
 const router = express.Router();
-const { createTask } = require('../controllers/taskController');
 
 const authMiddleware = require("../middleware/authMiddleware");
 const { isAdmin } = require("../middleware/adminMiddleware");
 
 const {
+  createTask,
   uploadTask,
   getAllTasks,
   deleteTaskById,
@@ -16,7 +16,9 @@ const {
 
 // ✅ Admin: Upload a new task
 router.post("/upload", authMiddleware, isAdmin, uploadTask);
-router.post('/create-task', createTask);
+
+// ✅ Admin: Alternate route to create a task
+router.post('/create-task', authMiddleware, isAdmin, createTask);
 
 // ✅ User: Get all tasks
 router.get("/all", authMiddleware, getAllTasks);
