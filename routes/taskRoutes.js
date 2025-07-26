@@ -1,13 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const taskController = require("../controllers/taskController");
-const authenticate = require("../middlewares/authenticate");
-const isAdmin = require("../middlewares/isAdmin");
+const adminAuth = require("../middleware/adminAuth");
 
-// 🔐 Admin Route: Create a new task
-router.post("/create", authenticate, isAdmin, taskController.createTask);
+// ✅ Admin creates a new task
+router.post("/create", adminAuth, taskController.createTask);
 
-// 🧠 User Route: Get all tasks by platform (e.g. YouTube, Instagram)
-router.get("/fetch", authenticate, taskController.getTasksByPlatform);
+// ✅ User fetches tasks by platform
+router.get("/fetch", taskController.getTasksByPlatform);
 
 module.exports = router;
