@@ -88,6 +88,11 @@ const completeTask = async (req, res) => {
 // ✅ Export all controllers
 module.exports = {
   createTask,
-  getTasksByPlatform,
-  completeTask,
+  getAllTasks,
+  deleteTask,
+  assignTaskToUser,
+  getUserTasks,
+  submitTaskProof,
+  getTaskHistory,
 };
+
