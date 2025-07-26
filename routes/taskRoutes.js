@@ -1,23 +1,28 @@
-const express = require("express");
+// routes/taskRoutes.js
+
+const express = require('express');
 const router = express.Router();
-const authMiddleware = require("../middleware/authMiddleware");
 const {
   createTask,
   getAllTasks,
+  deleteTask,
+  assignTaskToUser,
   getUserTasks,
-  submitTaskCompletion,
-} = require("../controllers/taskController");
+  submitTaskProof,
+  getTaskHistory,
+} = require('../controllers/taskController');
 
-// POST /api/tasks/create — Admin creates a task
-router.post("/create", authMiddleware, createTask);
+// Admin Routes
+router.post('/create', createTask);
+router.get('/all', getAllTasks);
+router.delete('/:id', deleteTask);
 
-// GET /api/tasks — Get all tasks (public or user)
-router.get("/", authMiddleware, getAllTasks);
+// User Task Assign & Submit
+router.post('/assign/:taskId/:userId', assignTaskToUser);
+router.get('/assigned/:userId', getUserTasks);
+router.post('/submit/:taskId/:userId', submitTaskProof);
 
-// GET /api/tasks/user — Get tasks completed by the user
-router.get("/user", authMiddleware, getUserTasks);
-
-// POST /api/tasks/submit — Submit a completed task
-router.post("/submit", authMiddleware, submitTaskCompletion);
+// Task history
+router.get('/history/:userId', getTaskHistory);
 
 module.exports = router;
