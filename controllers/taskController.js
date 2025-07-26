@@ -1,45 +1,71 @@
 const Task = require("../models/Task");
+const User = require("../models/User");
+const TaskHistory = require("../models/TaskHistory");
 
-// Admin: Upload a new task
-exports.createTask = async (req, res) => {
+// POST /api/task/complete/:taskId
+exports.completeTask = async (req, res) => {
   try {
-    const { platform, taskType, title, link, reward, watchTime } = req.body;
+    const userId = req.user.id;
+    const taskId = req.params.taskId;
 
-    if (!platform || !taskType || !title || !link || !reward) {
-      return res.status(400).json({ error: "All required fields must be filled." });
+    const task = await Task.findById(taskId);
+    if (!task) return res.status(404).json({ error: "Task not found" });
+
+    // Already completed?
+    const alreadyDone = await TaskHistory.findOne({ userId, taskId });
+    if (alreadyDone) {
+      return res.status(400).json({ error: "You already completed this task" });
     }
 
-    const newTask = new Task({
-      platform,
-      taskType,
-      title,
-      link,
-      reward,
-      watchTime,
-      createdBy: req.user?.id || null, // Optional: set admin ID if using auth
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // 1. Direct reward (50%)
+    const directReward = task.reward * 0.5;
+    user.wallet += directReward;
+    await user.save();
+
+    // 2. MLM commission (50%) over 30 levels
+    const mlmReward = task.reward * 0.5;
+    let remainingReward = mlmReward;
+    let currentRef = user.referredBy;
+    const levelPercentages = [
+      0.20, 0.10, 0.05, 0.04, 0.03, 0.02, 0.02, 0.01, 0.01, 0.01,
+      0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005,
+      0.002, 0.002, 0.002, 0.002, 0.002, 0.001, 0.001, 0.001, 0.001, 0.001
+    ];
+
+    for (let i = 0; i < 30; i++) {
+      if (!currentRef) break;
+
+      const refUser = await User.findById(currentRef);
+      if (!refUser) break;
+
+      const commission = mlmReward * levelPercentages[i];
+      refUser.wallet += commission;
+      await refUser.save();
+
+      remainingReward -= commission;
+      currentRef = refUser.referredBy;
+    }
+
+    // 3. Store Task History
+    const newHistory = new TaskHistory({
+      userId,
+      taskId,
+      rewardEarned: directReward,
+      completedAt: new Date(),
     });
+    await newHistory.save();
 
-    await newTask.save();
-    res.status(201).json({ message: "Task created successfully", task: newTask });
+    res.status(200).json({
+      message: "Task completed successfully",
+      reward: directReward,
+      mlmDistributed: mlmReward - remainingReward,
+      remaining: remainingReward
+    });
   } catch (err) {
-    console.error("Create Task Error:", err);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
-
-// User: Fetch active tasks by platform
-exports.getTasksByPlatform = async (req, res) => {
-  try {
-    const { platform } = req.query;
-
-    if (!platform) {
-      return res.status(400).json({ error: "Platform is required" });
-    }
-
-    const tasks = await Task.find({ platform, status: "active" }).sort({ createdAt: -1 });
-    res.status(200).json({ tasks });
-  } catch (err) {
-    console.error("Fetch Tasks Error:", err);
+    console.error("Complete Task Error:", err);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
