@@ -8,25 +8,27 @@ exports.completeTask = async (req, res) => {
     const userId = req.user.id;
     const taskId = req.params.taskId;
 
+    // 1. Task exist check
     const task = await Task.findById(taskId);
     if (!task) return res.status(404).json({ error: "Task not found" });
 
-    // Already completed?
+    // 2. Check if already completed
     const alreadyDone = await TaskHistory.findOne({ userId, taskId });
     if (alreadyDone) {
       return res.status(400).json({ error: "You already completed this task" });
     }
 
+    // 3. User check
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    // 1. Direct reward (50%)
-    const directReward = task.reward * 0.5;
-    user.wallet += directReward;
+    // 4. Direct reward (50%)
+    const directReward = Number((task.reward * 0.5).toFixed(2));
+    user.wallet = Number((user.wallet + directReward).toFixed(2));
     await user.save();
 
-    // 2. MLM commission (50%) over 30 levels
-    const mlmReward = task.reward * 0.5;
+    // 5. MLM commission (50%) over 30 levels
+    const mlmReward = Number((task.reward * 0.5).toFixed(2));
     let remainingReward = mlmReward;
     let currentRef = user.referredBy;
     const levelPercentages = [
@@ -41,15 +43,15 @@ exports.completeTask = async (req, res) => {
       const refUser = await User.findById(currentRef);
       if (!refUser) break;
 
-      const commission = mlmReward * levelPercentages[i];
-      refUser.wallet += commission;
+      const commission = Number((mlmReward * levelPercentages[i]).toFixed(2));
+      refUser.wallet = Number((refUser.wallet + commission).toFixed(2));
       await refUser.save();
 
-      remainingReward -= commission;
+      remainingReward = Number((remainingReward - commission).toFixed(2));
       currentRef = refUser.referredBy;
     }
 
-    // 3. Store Task History
+    // 6. Save task history
     const newHistory = new TaskHistory({
       userId,
       taskId,
@@ -58,14 +60,14 @@ exports.completeTask = async (req, res) => {
     });
     await newHistory.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Task completed successfully",
       reward: directReward,
-      mlmDistributed: mlmReward - remainingReward,
-      remaining: remainingReward
+      mlmDistributed: Number((mlmReward - remainingReward).toFixed(2)),
+      remaining: remainingReward,
     });
   } catch (err) {
     console.error("Complete Task Error:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };
