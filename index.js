@@ -32,7 +32,7 @@ connectDB();
 // ✅ 8. Import All Routes
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
-const taskRoutes = require("./routes/taskRoutes"); // ✅ This was missing
+const taskRoutes = require("./routes/taskRoutes");
 const walletRoutes = require("./routes/walletRoutes");
 const teamRoutes = require("./routes/teamRoutes");
 const leaderboardRoutes = require("./routes/leaderboardRoutes");
@@ -43,7 +43,7 @@ const referralRoutes = require("./routes/referralRoutes");
 // ✅ 9. Use All Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
-app.use("/api/task", require("./routes/taskRoutes"));
+app.use("/api/task", taskRoutes); // use directly here
 app.use("/api/wallet", walletRoutes);
 app.use("/api/team", teamRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
