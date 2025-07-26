@@ -29,23 +29,34 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // ✅ 7. Connect to MongoDB
 connectDB();
 
-// ✅ 8. All Routes
-app.use("/api/auth", require("./routes/authRoutes"));
-app.use("/api/user", require("./routes/userRoutes"));
-app.use("/api/task", require("./routes/taskRoutes"));
-app.use("/api/wallet", require("./routes/walletRoutes"));
-app.use("/api/team", require("./routes/teamRoutes"));
-app.use("/api/leaderboard", require("./routes/leaderboardRoutes"));
-app.use("/api/admin", require("./routes/adminRoutes"));
-app.use("/api/withdrawal", require("./routes/withdrawalRoutes"));
-app.use("/api/referral", require("./routes/referralRoutes")); // ✅ Newly added
+// ✅ 8. Import All Routes
+const authRoutes = require("./routes/authRoutes");
+const userRoutes = require("./routes/userRoutes");
+const taskRoutes = require("./routes/taskRoutes"); // ✅ This was missing
+const walletRoutes = require("./routes/walletRoutes");
+const teamRoutes = require("./routes/teamRoutes");
+const leaderboardRoutes = require("./routes/leaderboardRoutes");
+const adminRoutes = require("./routes/adminRoutes");
+const withdrawalRoutes = require("./routes/withdrawalRoutes");
+const referralRoutes = require("./routes/referralRoutes");
 
-// ✅ 9. Test route
+// ✅ 9. Use All Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/task", taskRoutes);
+app.use("/api/wallet", walletRoutes);
+app.use("/api/team", teamRoutes);
+app.use("/api/leaderboard", leaderboardRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/withdrawal", withdrawalRoutes);
+app.use("/api/referral", referralRoutes);
+
+// ✅ 10. Test route
 app.get("/", (req, res) => {
   res.send("🎉 AdGlow Backend is Running");
 });
 
-// ✅ 10. Start Server
+// ✅ 11. Start Server
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
