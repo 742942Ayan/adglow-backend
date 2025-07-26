@@ -1,3 +1,5 @@
+// routes/taskRoutes.js
+
 const express = require("express");
 const router = express.Router();
 
@@ -8,7 +10,7 @@ const {
   uploadTask,
   getAllTasks,
   deleteTaskById,
-  completeTask
+  completeTask,
 } = require("../controllers/taskController");
 
 // ✅ Admin: Upload a new task
