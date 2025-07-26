@@ -9,34 +9,35 @@ const distributeReferralEarnings = require("../utils/distributeReferralEarnings"
 const completeTask = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { taskId, rewardAmount } = req.body; // rewardAmount = total task reward (e.g. ₹10)
+    const { taskId, rewardAmount } = req.body;
 
-    if (!taskId || !rewardAmount) {
-      return res.status(400).json({ message: "Task ID and reward amount are required." });
+    // Basic validation
+    if (!taskId || !rewardAmount || isNaN(rewardAmount)) {
+      return res.status(400).json({ message: "Task ID and valid reward amount are required." });
     }
 
-    // ✅ Step 1: Credit 50% to user
-    const userShare = rewardAmount * 0.5;
+    const reward = parseFloat(rewardAmount);
+    const userShare = reward * 0.5;
+    const referralShare = reward * 0.5;
 
+    // ✅ Step 1: Credit 50% to the user
     await Wallet.findOneAndUpdate(
       { user: userId },
       { $inc: { balance: userShare, totalEarned: userShare } },
-      { upsert: true }
+      { upsert: true, new: true }
     );
 
-    // ✅ Step 2: Distribute 50% among uplines
-    const referralShare = rewardAmount * 0.5;
-
+    // ✅ Step 2: Distribute 50% among referral tree
     await distributeReferralEarnings(userId, referralShare);
 
     return res.status(200).json({
-      message: "Task completed, earnings distributed.",
+      message: "✅ Task completed successfully. Earnings distributed.",
       userEarned: userShare,
       referralDistributed: referralShare,
     });
   } catch (error) {
-    console.error("Task completion error:", error);
-    return res.status(500).json({ message: "Task completion failed" });
+    console.error("❌ Task completion error:", error.message);
+    return res.status(500).json({ message: "❌ Task completion failed. Please try again." });
   }
 };
 
