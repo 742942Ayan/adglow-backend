@@ -1,23 +1,11 @@
 const express = require("express");
 const router = express.Router();
+const taskController = require("../controllers/taskController");
 
-const authMiddleware = require("../middleware/authMiddleware");
-const { isAdmin } = require("../middleware/adminMiddleware");
+// POST: Admin - Create a new task
+router.post("/create", taskController.createTask);
 
-// ✅ IMPORT CONTROLLER FUNCTIONS
-const {
-  createTask,
-  uploadTask,
-  getAllTasks,
-  deleteTaskById,
-  completeTask,
-} = require("../controllers/taskController");
-
-// ✅ ROUTES
-router.post("/upload", authMiddleware, isAdmin, uploadTask);
-router.post("/create-task", authMiddleware, isAdmin, createTask);
-router.get("/all", authMiddleware, getAllTasks);
-router.delete("/delete/:id", authMiddleware, isAdmin, deleteTaskById);
-router.post("/complete", authMiddleware, completeTask);
+// GET: User - Fetch tasks by platform
+router.get("/fetch", taskController.getTasksByPlatform);
 
 module.exports = router;
