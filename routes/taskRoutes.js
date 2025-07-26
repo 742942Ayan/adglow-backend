@@ -6,19 +6,19 @@ const {
   createTask,
   getAllTasks,
   deleteTask,
-  completeTask, // ✅ Added
+  completeTask,
 } = require("../controllers/taskController");
 
-// ✅ POST: Create a new task (Admin only)
+// 🔒 Admin Only: Create a new task
 router.post("/", authMiddleware, isAdmin, createTask);
 
-// ✅ GET: Get all tasks (accessible to all logged-in users)
+// 👥 All Users: Get all available tasks
 router.get("/", authMiddleware, getAllTasks);
 
-// ✅ DELETE: Delete a task by ID (Admin only)
+// 🔒 Admin Only: Delete a specific task by ID
 router.delete("/:taskId", authMiddleware, isAdmin, deleteTask);
 
-// ✅ POST: Complete a task (User triggers this when done)
+// ✅ User: Mark task as completed and receive reward
 router.post("/complete", authMiddleware, completeTask);
 
 module.exports = router;
