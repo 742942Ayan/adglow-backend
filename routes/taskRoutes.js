@@ -1,18 +1,23 @@
 const express = require("express");
 const router = express.Router();
-const taskController = require("../controllers/taskController");
-const adminAuth = require("../middleware/adminAuth");
+const authMiddleware = require("../middleware/authMiddleware");
+const {
+  createTask,
+  getAllTasks,
+  getUserTasks,
+  submitTaskCompletion,
+} = require("../controllers/taskController");
 
-// ✅ Admin creates a new task
-router.post("/create", adminAuth, taskController.createTask);
+// POST /api/tasks/create — Admin creates a task
+router.post("/create", authMiddleware, createTask);
 
-// ✅ User fetches tasks by platform (e.g., ?platform=youtube)
-router.get("/fetch", taskController.getTasksByPlatform);
+// GET /api/tasks — Get all tasks (public or user)
+router.get("/", authMiddleware, getAllTasks);
 
-// ✅ User submits task completion
-router.post("/submit", taskController.submitTask);
+// GET /api/tasks/user — Get tasks completed by the user
+router.get("/user", authMiddleware, getUserTasks);
 
-// ✅ Admin deletes a task
-router.delete("/delete/:taskId", adminAuth, taskController.deleteTask);
+// POST /api/tasks/submit — Submit a completed task
+router.post("/submit", authMiddleware, submitTaskCompletion);
 
 module.exports = router;
