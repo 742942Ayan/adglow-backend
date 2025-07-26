@@ -1,10 +1,20 @@
-router.post('/', authMiddleware, isAdmin, async (req, res) => {
-  const task = new Task(req.body);
-  await task.save();
-  res.json(task);
-});
+const express = require("express");
+const router = express.Router();
+const authMiddleware = require("../middleware/authMiddleware");
+const { isAdmin } = require("../middleware/adminMiddleware");
+const {
+  createTask,
+  getAllTasks,
+  deleteTask,
+} = require("../controllers/taskController");
 
-router.delete('/:id', authMiddleware, isAdmin, async (req, res) => {
-  await Task.findByIdAndDelete(req.params.id);
-  res.json({ message: 'Deleted' });
-});
+// ✅ POST: Create a new task (Admin only)
+router.post("/", authMiddleware, isAdmin, createTask);
+
+// ✅ GET: Get all tasks
+router.get("/", authMiddleware, getAllTasks);
+
+// ✅ DELETE: Delete a task (Admin only)
+router.delete("/:taskId", authMiddleware, isAdmin, deleteTask);
+
+module.exports = router;
