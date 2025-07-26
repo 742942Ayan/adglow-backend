@@ -1,14 +1,26 @@
 const express = require("express");
 const router = express.Router();
-const { uploadTask, getAllTasks, deleteTaskById } = require("../controllers/taskController");
 
-// Route to upload a task (POST)
-router.post("/upload", uploadTask);
+const authMiddleware = require("../middleware/authMiddleware");
+const { isAdmin } = require("../middleware/adminMiddleware");
 
-// Route to get all tasks (GET)
-router.get("/all", getAllTasks);
+const {
+  uploadTask,
+  getAllTasks,
+  deleteTaskById,
+  completeTask
+} = require("../controllers/taskController");
 
-// Route to delete a task by ID (DELETE)
-router.delete("/delete/:id", deleteTaskById);
+// ✅ Admin: Upload a new task
+router.post("/upload", authMiddleware, isAdmin, uploadTask);
+
+// ✅ User: Get all tasks
+router.get("/all", authMiddleware, getAllTasks);
+
+// ✅ Admin: Delete a task by ID
+router.delete("/delete/:id", authMiddleware, isAdmin, deleteTaskById);
+
+// ✅ User: Mark a task as completed
+router.post("/complete", authMiddleware, completeTask);
 
 module.exports = router;
