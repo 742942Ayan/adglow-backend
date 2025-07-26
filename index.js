@@ -43,7 +43,7 @@ const referralRoutes = require("./routes/referralRoutes");
 // ✅ 9. Use All Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
-app.use("/api/task", taskRoutes);
+app.use("/api/task", require("./routes/taskRoutes"));
 app.use("/api/wallet", walletRoutes);
 app.use("/api/team", teamRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
