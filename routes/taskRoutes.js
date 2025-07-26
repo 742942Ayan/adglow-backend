@@ -1,24 +1,14 @@
 const express = require("express");
 const router = express.Router();
-const authMiddleware = require("../middleware/authMiddleware");
-const { isAdmin } = require("../middleware/adminMiddleware");
-const {
-  createTask,
-  getAllTasks,
-  deleteTask,
-  completeTask,
-} = require("../controllers/taskController");
+const { uploadTask, getAllTasks, deleteTaskById } = require("../controllers/taskController");
 
-// 🔒 Admin Only: Create a new task
-router.post("/", authMiddleware, isAdmin, createTask);
+// Route to upload a task (POST)
+router.post("/upload", uploadTask);
 
-// 👥 All Users: Get all available tasks
-router.get("/", authMiddleware, getAllTasks);
+// Route to get all tasks (GET)
+router.get("/all", getAllTasks);
 
-// 🔒 Admin Only: Delete a specific task by ID
-router.delete("/:taskId", authMiddleware, isAdmin, deleteTask);
-
-// ✅ User: Mark task as completed and receive reward
-router.post("/complete", authMiddleware, completeTask);
+// Route to delete a task by ID (DELETE)
+router.delete("/delete/:id", deleteTaskById);
 
 module.exports = router;
